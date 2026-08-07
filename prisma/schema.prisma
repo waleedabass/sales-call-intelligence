@@ -1,0 +1,229 @@
+// AI Sales Call Intelligence & CRM Copilot — data model
+// SQLite for local dev via a driver adapter (Prisma 7 requires one explicitly).
+// No native enum on sqlite, so status/type fields are String, validated at
+// the application layer — see src/lib/enums.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Deal {
+  id           String   @id @default(cuid())
+  accountName  String
+  contactName  String
+  contactEmail String
+  stage        String   @default("discovery") // see enums.ts DEAL_STAGES
+  source       String   @default("manual") // "manual" | "crm_synced"
+  hubspotDealId String?
+  createdAt    DateTime @default(now())
+
+  // Deterministic risk rollup, recomputed after every call on the deal.
+  riskScore       Int?
+  riskLabel       String? // "low" | "medium" | "high"
+  riskExplanation String?
+  riskUpdatedAt   DateTime?
+
+  calls          Call[]
+  riskFactors    RiskFactor[]
+  riskSnapshots  RiskSnapshot[]
+  crmFieldChanges CrmFieldChange[]
+
+  @@index([riskScore])
+}
+
+model Call {
+  id            String   @id @default(cuid())
+  dealId        String
+  deal          Deal     @relation(fields: [dealId], references: [id])
+
+  title         String
+  occurredAt    DateTime @default(now())
+  source        String   @default("upload") // "upload" | "zoom" | "teams" | "meet" | "twilio"
+  recordingPath String // relative path under /recordings
+  durationSec   Int?
+  repName       String
+  status        String   @default("uploaded") // see enums.ts CALL_STATUSES
+  transcriptionModel String?
+
+  segments          TranscriptSegment[]
+  insight           CallInsight?
+  objections        Objection[]
+  commitments       Commitment[]
+  competitorMentions CompetitorMention[]
+  nextSteps         NextStep[]
+  coachingNotes     CoachingNote[]
+  riskFactors       RiskFactor[]
+  crmFieldChanges   CrmFieldChange[]
+  followUpDrafts    FollowUpDraft[]
+
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+}
+
+model TranscriptSegment {
+  id       String @id @default(cuid())
+  callId   String
+  call     Call   @relation(fields: [callId], references: [id])
+
+  speaker   String // "rep" | "prospect" | "unknown"
+  startSec  Float
+  endSec    Float
+  text      String
+  embedding String? // JSON-encoded number[] for semantic search
+  order     Int // playback order within the call
+
+  objections        Objection[]
+  commitments       Commitment[]
+  competitorMentions CompetitorMention[]
+  nextSteps         NextStep[]
+
+  @@index([callId])
+}
+
+model CallInsight {
+  id        String @id @default(cuid())
+  callId    String @unique
+  call      Call   @relation(fields: [callId], references: [id])
+
+  summary   String
+  sentiment String // "positive" | "neutral" | "negative"
+  talkRatioRep Int? // 0-100, rep's share of talk time by segment duration
+  model     String
+}
+
+model Objection {
+  id        String  @id @default(cuid())
+  callId    String
+  call      Call    @relation(fields: [callId], references: [id])
+  segmentId String?
+  segment   TranscriptSegment? @relation(fields: [segmentId], references: [id])
+
+  text     String
+  resolved Boolean @default(false)
+
+  @@index([callId])
+}
+
+model Commitment {
+  id        String  @id @default(cuid())
+  callId    String
+  call      Call    @relation(fields: [callId], references: [id])
+  segmentId String?
+  segment   TranscriptSegment? @relation(fields: [segmentId], references: [id])
+
+  text    String
+  owner   String // "rep" | "prospect"
+  dueDate DateTime?
+  status  String @default("open") // "open" | "fulfilled" | "broken"
+
+  followUpDrafts FollowUpDraft[]
+
+  @@index([callId])
+}
+
+model CompetitorMention {
+  id        String  @id @default(cuid())
+  callId    String
+  call      Call    @relation(fields: [callId], references: [id])
+  segmentId String?
+  segment   TranscriptSegment? @relation(fields: [segmentId], references: [id])
+
+  competitorName String
+  context        String
+
+  @@index([callId])
+}
+
+model NextStep {
+  id        String  @id @default(cuid())
+  callId    String
+  call      Call    @relation(fields: [callId], references: [id])
+  segmentId String?
+  segment   TranscriptSegment? @relation(fields: [segmentId], references: [id])
+
+  text String
+
+  @@index([callId])
+}
+
+model CoachingNote {
+  id       String @id @default(cuid())
+  callId   String
+  call     Call   @relation(fields: [callId], references: [id])
+
+  repName  String
+  category String // "objection_handling" | "talk_ratio" | "next_steps" | "discovery"
+  insight  String
+
+  @@index([callId])
+  @@index([repName])
+}
+
+model RiskFactor {
+  id     String @id @default(cuid())
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id])
+  callId String?
+  call   Call?  @relation(fields: [callId], references: [id])
+
+  label  String
+  points Int
+
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+}
+
+model CrmFieldChange {
+  id     String @id @default(cuid())
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id])
+  callId String
+  call   Call   @relation(fields: [callId], references: [id])
+  evidenceSegmentId String?
+
+  fieldName String
+  oldValue  String
+  newValue  String
+  status    String @default("proposed") // see enums.ts CRM_FIELD_CHANGE_STATUSES
+  provider  String? // "hubspot" | "log_only", set once applied
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+  @@index([callId])
+}
+
+model FollowUpDraft {
+  id           String @id @default(cuid())
+  callId       String
+  call         Call   @relation(fields: [callId], references: [id])
+  commitmentId String?
+  commitment   Commitment? @relation(fields: [commitmentId], references: [id])
+
+  subject String
+  body    String
+  status  String @default("draft") // "draft" | "approved" | "sent_log_only"
+
+  createdAt DateTime @default(now())
+
+  @@index([callId])
+}
+
+model RiskSnapshot {
+  id     String @id @default(cuid())
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id])
+
+  score     Int
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+}

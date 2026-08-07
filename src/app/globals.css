@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Same minimal palette as the other four ARC prototypes. */
+:root {
+  --ink: #f3f3f3;
+  --panel: #f7f7f7;
+  --panel-2: #d9dada;
+  --line: #c6c7c8;
+  --line-soft: #d9dada;
+  --text: #121314;
+  --muted: #3e4246;
+  --muted-2: #adaeb0;
+  --accent: #c3d4e8;
+
+  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.mono { font-family: var(--font-mono); }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 7px 13px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: var(--panel-2); }
+.btn-primary { background: var(--text); border-color: var(--text); color: var(--panel); font-weight: 600; }
+.btn-primary:hover { background: var(--muted); border-color: var(--muted); }
+
+.field {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: var(--font-sans);
+}
+.field:focus-visible, .btn:focus-visible, a:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 2px;
+}
+
+/* Generic tone chips — status/label strings map to a tone via
+   src/lib/tone.ts rather than one CSS class per enum value, since this
+   project has more status enums than the other four combined. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  padding: 4px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.chip-neutral { color: var(--muted); background: var(--panel-2); }
+.chip-info { color: var(--text); background: var(--accent); }
+.chip-good { color: var(--panel); background: var(--text); }
+.chip-warn { color: var(--text); background: var(--muted-2); }
+.chip-danger { color: var(--panel); background: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
