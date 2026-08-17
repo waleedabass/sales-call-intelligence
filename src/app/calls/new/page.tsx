@@ -2,9 +2,9 @@ import { db } from "@/lib/db";
 import { createCallAction, loadDemoCallAction } from "@/lib/actions";
 
 // processCall runs transcription, embeddings, extraction, coaching, and risk
-// scoring sequentially — comfortably over Vercel's default 10s function
-// timeout. 60s is the max Hobby allows.
-export const maxDuration = 60;
+// scoring sequentially — comfortably over Vercel's default function timeout.
+// 300s is the Hobby-plan maximum (with fluid compute).
+export const maxDuration = 300;
 
 export default async function NewCallPage() {
   const deals = await db.deal.findMany({ orderBy: { accountName: "asc" } });
