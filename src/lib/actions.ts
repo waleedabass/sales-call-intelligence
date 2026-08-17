@@ -14,7 +14,7 @@ import { recomputeDealRisk } from "@/lib/risk/recompute";
 import { proposeCrmFieldChanges } from "@/lib/crm/propose";
 import { getCrmProvider } from "@/lib/crm";
 import { getFollowUpDraftProvider } from "@/lib/followup";
-import { recordingsDir, saveRecording } from "@/lib/storage";
+import { generateSafeFilename } from "@/lib/storage";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -28,7 +28,7 @@ export async function processCall(callId: string): Promise<void> {
   await db.call.update({ where: { id: callId }, data: { status: "transcribing" } });
 
   // 1. Transcribe.
-  const fileBuffer = await readFile(path.join(recordingsDir(), call.recordingPath));
+  const fileBuffer = Buffer.from(call.recordingData);
   const mimeType = call.recordingPath.endsWith(".wav") ? "audio/wav" : "application/octet-stream";
   const transcriptionProvider = getTranscriptionProvider();
   const rawSegments = await transcriptionProvider.transcribe(fileBuffer, mimeType);
@@ -229,9 +229,11 @@ export async function createCallAction(formData: FormData): Promise<void> {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const recordingPath = await saveRecording(buffer, file.name);
+  const recordingPath = generateSafeFilename(file.name);
 
-  const call = await db.call.create({ data: { dealId, title, repName, recordingPath, source: "upload" } });
+  const call = await db.call.create({
+    data: { dealId, title, repName, recordingPath, recordingData: new Uint8Array(buffer), source: "upload" },
+  });
   await processCall(call.id);
   redirect(`/calls/${call.id}`);
 }
@@ -244,10 +246,17 @@ export async function loadDemoCallAction(): Promise<void> {
   const deal = await db.deal.findFirstOrThrow({ where: { accountName: "Brightline Retail" } });
   const filename = "brightline-retail-demo.wav";
   const buffer = await readFile(path.join(process.cwd(), "sample-calls", filename));
-  const recordingPath = await saveRecording(buffer, filename);
+  const recordingPath = generateSafeFilename(filename);
 
   const call = await db.call.create({
-    data: { dealId: deal.id, title: "Brightline Retail — discovery call", repName: "Jordan Reyes", recordingPath, source: "upload" },
+    data: {
+      dealId: deal.id,
+      title: "Brightline Retail — discovery call",
+      repName: "Jordan Reyes",
+      recordingPath,
+      recordingData: new Uint8Array(buffer),
+      source: "upload",
+    },
   });
   await processCall(call.id);
   redirect(`/calls/${call.id}`);

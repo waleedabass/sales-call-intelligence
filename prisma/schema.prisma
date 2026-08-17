@@ -44,7 +44,9 @@ model Call {
   title         String
   occurredAt    DateTime @default(now())
   source        String   @default("upload") // "upload" | "zoom" | "teams" | "meet" | "twilio"
-  recordingPath String // relative path under /recordings
+  recordingPath String // legacy unique-name identifier, kept for audit — no longer a disk path
+  recordingData Bytes  // the original recording, stored in the DB since the deployed
+                        // runtime has no persistent disk to keep it on
   durationSec   Int?
   repName       String
   status        String   @default("uploaded") // see enums.ts CALL_STATUSES
