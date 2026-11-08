@@ -5,10 +5,11 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test": "tsx --test tests/audio.test.ts tests/live-access.test.ts tests/public-demo.test.mjs tests/sample.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -16,15 +17,15 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
     "@libsql/client": "^0.17.4",
-    "@prisma/adapter-libsql": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-libsql": "7.10.1",
+    "@prisma/client": "7.10.1",
     "dotenv": "^17.4.2",
-    "next": "16.3.0",
-    "prisma": "^7.9.1",
+    "next": "16.4.5",
+    "prisma": "7.10.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tsx": "^4.23.8",
-    "zod": "^4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -32,7 +33,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0",
+    "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,6 +1,6 @@
 # AI Sales Call Intelligence & CRM Copilot
 
-A working prototype of ARC Automations' sales-call-intelligence product, built around the brief's own contrast: "the average tool creates meeting notes. The agency version understands account history, updates exact CRM fields, detects risk across multiple calls, preserves evidence, and allows manager approval." Every claim this app makes is linked back to the exact transcript moment it came from, deal risk is a deterministic number that aggregates a deal's *whole* call history, and nothing writes to the CRM without a human clicking approve.
+A working prototype of Pixel AI Solutions' sales-call-intelligence product, built around the brief's own contrast: "the average tool creates meeting notes. The agency version understands account history, updates exact CRM fields, detects risk across multiple calls, preserves evidence, and allows manager approval." Every claim this app makes is linked back to the exact transcript moment it came from, deal risk is a deterministic number that aggregates a deal's *whole* call history, and nothing writes to the CRM without a human clicking approve.
 
 Fictional vendor: **Cascade Analytics** (B2B SaaS), AE **Jordan Reyes**, mid-cycle with prospect **Brightline Retail** (buyer: **Morgan Ellis**).
 
@@ -58,17 +58,24 @@ To regenerate the demo audio (e.g. after editing the script):
 
 ## Architecture notes
 
-- **Same conventions as the other four ARC projects**: Next.js 16 + Prisma 7 with the `@prisma/adapter-better-sqlite3` driver adapter, Server Actions for mutations, provider interfaces (`TranscriptionProvider`, `CallInsightProvider`, `CoachingProvider`, `RiskExplainProvider`, `FollowUpDraftProvider`, `CrmProvider`) so a real upgrade slots in without touching business logic. Same 8-color minimal palette across all five, for a portfolio that reads as one body of work.
+- **Same conventions as the other four Pixel projects**: Next.js 16 + Prisma 7 with the `@prisma/adapter-better-sqlite3` driver adapter, Server Actions for mutations, provider interfaces (`TranscriptionProvider`, `CallInsightProvider`, `CoachingProvider`, `RiskExplainProvider`, `FollowUpDraftProvider`, `CrmProvider`) so a real upgrade slots in without touching business logic. Same 8-color minimal palette across all five, for a portfolio that reads as one body of work.
 - **No separate ASR/diarization service by default** — same reasoning as `document-ai` skipping a separate OCR step: the main model already does it, and doing it via a dedicated call would just add latency and a second thing that can drift out of sync with the rest of the pipeline.
 - **Deal risk and CRM proposals are deliberately not AI** — deterministic, inspectable, reproducible. An AI-guessed risk number or CRM value would fail exactly the test the brief sets: "the agency version... detects risk across multiple calls" implies a real aggregation a manager could audit, not a vibe.
-- **Semantic search re-implements `support-agent`'s exact approach** (Gemini embeddings + in-app cosine similarity) rather than importing it — each ARC prototype stays self-contained and independently deployable, same as the Greenhouse/Lever re-implementation in `lead-qualification`.
+- **Semantic search re-implements `support-agent`'s exact approach** (Gemini embeddings + in-app cosine similarity) rather than importing it — each Pixel prototype stays self-contained and independently deployable, same as the Greenhouse/Lever re-implementation in `lead-qualification`.
 - **Files stored on local disk** (`/recordings`, gitignored), path referenced in the DB — same as `document-ai`'s `/uploads` pattern, no S3 dependency needed at prototype scale.
 
 ## Known limitations, on purpose
 
 - **16-bit PCM WAV only.** Real conferencing exports (MP3, M4A, compressed formats) would need transcoding — out of scope for a prototype; a client build would add `ffmpeg` at the upload step.
 - **No real Zoom/Google Meet/Microsoft Teams recording ingestion** — all three require registering and getting an app reviewed on their respective marketplaces, the same bucket as QuickBooks/Xero in `document-ai`. Manual upload is the one ingestion path guaranteed to work regardless of which conferencing tool a team uses, exactly how Gong/Fireflies/Avoma all support upload too.
-- **HubSpot deal sync requires a deal already linked** (`Deal.hubspotDealId`) and custom properties (`next_step`, `competitor`, `risk_score`) created on your HubSpot portal — deals don't have a natural unique key like a contact's email, so unlike the contact-upsert pattern in the other ARC projects, this can only PATCH an existing linked deal, not create one from scratch.
+- **HubSpot deal sync requires a deal already linked** (`Deal.hubspotDealId`) and custom properties (`next_step`, `competitor`, `risk_score`) created on your HubSpot portal — deals don't have a natural unique key like a contact's email, so unlike the contact-upsert pattern in the other Pixel projects, this can only PATCH an existing linked deal, not create one from scratch.
 - **No real email-sending integration** exists anywhere in this portfolio yet — follow-up approval always logs what would be sent.
 - **Commitment "broken" status is date-based only** — a commitment becomes overdue (and feeds into risk) only if the model captured a concrete, parseable due date. Natural-language commitments like "by tomorrow morning" are preserved in the commitment text but don't set a structured due date, since guessing a real calendar date from relative phrasing isn't something this pipeline does.
 - **The `next_step` / `competitor` / `risk_score` "CRM fields" are synthetic** — there's no standard HubSpot property for them; a client deployment would map these to whatever custom properties (or existing standard ones) their actual HubSpot portal uses.
+
+
+## Public Pixel sample
+
+The public entry and `/demo` run editable, browser-isolated sample workflows. No live email, payment, CRM update or paid AI request is made. Records reset on reload. Existing provider integrations remain available behind explicit private access. Set `ENABLE_LIVE_DEMO=true`, `DATABASE_URL` and a private `PIXEL_LIVE_ACCESS_TOKEN` of at least 32 characters; authenticate internal requests using the `pixel-live-access` cookie or a Bearer header. Keep provider keys server-side. Public POSTs and APIs are blocked. Do not enable integration mode for anonymous visitors.
+
+Run `npm ci`, `npm test`, `npm run lint`, and `npm run build`. Production uses the linked Vercel project.

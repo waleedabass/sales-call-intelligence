@@ -152,3 +152,10 @@ An average call-intelligence tool produces a transcript and a summary and stops 
 4. Show the CRM diff screen — approve a proposed field change, watch it apply.
 5. Show the drafted follow-up email, referencing the real promised document.
 6. Run a semantic search across the call library for a topic and jump straight to the moment.
+
+
+## Public Pixel sample
+
+The public entry and `/demo` run editable, browser-isolated sample workflows. No live email, payment, CRM update or paid AI request is made. Records reset on reload. Existing provider integrations remain available behind explicit private access. Set `ENABLE_LIVE_DEMO=true`, `DATABASE_URL` and a private `PIXEL_LIVE_ACCESS_TOKEN` of at least 32 characters; authenticate internal requests using the `pixel-live-access` cookie or a Bearer header. Keep provider keys server-side. Public POSTs and APIs are blocked. Do not enable integration mode for anonymous visitors.
+
+Run `npm ci`, `npm test`, `npm run lint`, and `npm run build`. Production uses the linked Vercel project.

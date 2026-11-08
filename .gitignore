@@ -52,3 +52,7 @@ next-env.d.ts
 /.windsurf
 /.agents
 skills-lock.json
+
+.next-docs/
+next-docs.tgz
+node_modules.partial*/

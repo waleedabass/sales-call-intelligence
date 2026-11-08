@@ -48,8 +48,8 @@ export function createOpenRouterRiskExplainProvider(apiKey: string): RiskExplain
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://arcautomations.in",
-            "X-Title": "ARC Automations Sales Call Intelligence",
+            "HTTP-Referer": "https://pixelaisolutions.com",
+            "X-Title": "Pixel AI Solutions Sales Call Intelligence",
           },
           body,
         });

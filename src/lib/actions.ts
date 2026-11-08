@@ -1,5 +1,7 @@
 "use server";
 
+import { requireLiveAccess } from "@/lib/live-access";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -23,6 +25,7 @@ import path from "node:path";
 // Server Action after upload. Built up incrementally — risk scoring, CRM
 // diff proposals, and follow-up drafting are added in later phases.
 export async function processCall(callId: string): Promise<void> {
+  await requireLiveAccess();
   const call = await db.call.findUniqueOrThrow({ where: { id: callId }, include: { deal: true } });
 
   await db.call.update({ where: { id: callId }, data: { status: "transcribing" } });
@@ -159,6 +162,7 @@ export async function processCall(callId: string): Promise<void> {
 }
 
 export async function searchCallsAction(query: string): Promise<CallSearchResult[]> {
+  await requireLiveAccess();
   const trimmed = query.trim();
   if (!trimmed) return [];
   const embedder = getEmbeddingProvider();
@@ -167,6 +171,7 @@ export async function searchCallsAction(query: string): Promise<CallSearchResult
 }
 
 export async function approveCrmFieldChangeAction(changeId: string): Promise<void> {
+  await requireLiveAccess();
   const change = await db.crmFieldChange.findUniqueOrThrow({ where: { id: changeId }, include: { deal: true } });
   if (change.status !== "proposed") return;
 
@@ -187,6 +192,7 @@ export async function approveCrmFieldChangeAction(changeId: string): Promise<voi
 }
 
 export async function rejectCrmFieldChangeAction(changeId: string): Promise<void> {
+  await requireLiveAccess();
   const change = await db.crmFieldChange.findUniqueOrThrow({ where: { id: changeId } });
   if (change.status !== "proposed") return;
 
@@ -202,6 +208,7 @@ export async function rejectCrmFieldChangeAction(changeId: string): Promise<void
 // actually sending it. The subject/body reflect whatever the manager left
 // in the form, so an edit before approving is captured too.
 export async function approveAndSendFollowUpAction(draftId: string, formData: FormData): Promise<void> {
+  await requireLiveAccess();
   const subject = String(formData.get("subject") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   if (!subject || !body) throw new Error("Subject and body are required.");
@@ -219,6 +226,7 @@ export async function approveAndSendFollowUpAction(draftId: string, formData: Fo
 }
 
 export async function createCallAction(formData: FormData): Promise<void> {
+  await requireLiveAccess();
   const dealId = String(formData.get("dealId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const repName = String(formData.get("repName") ?? "").trim();
@@ -243,6 +251,7 @@ export async function createCallAction(formData: FormData): Promise<void> {
 // shortcut so a portfolio visitor doesn't need their own recording on hand,
 // same role as document-ai's pre-generated sample invoices.
 export async function loadDemoCallAction(): Promise<void> {
+  await requireLiveAccess();
   const deal = await db.deal.findFirstOrThrow({ where: { accountName: "Brightline Retail" } });
   const filename = "brightline-retail-demo.wav";
   const buffer = await readFile(path.join(process.cwd(), "sample-calls", filename));

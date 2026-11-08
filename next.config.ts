@@ -1,13 +1,8 @@
 import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // loadDemoCallAction reads sample-calls/*.wav at runtime via a dynamic
-  // path, which Next's serverless file tracer won't always pick up on its
-  // own — without this the demo-call button 404s in production even though
-  // it works locally.
-  outputFileTracingIncludes: {
-    "/**": ["./sample-calls/**"],
-  },
+const nextConfig:NextConfig={
+  experimental:{cpus:2},
+  poweredByHeader:false,
+  // The private demo-call action reads this recording from disk at runtime.
+  outputFileTracingIncludes:{'/calls/new':['./sample-calls/*.wav']},
 };
-
 export default nextConfig;
